@@ -1,38 +1,35 @@
-# This file stores configurations for your Shopify app.
+client_id = "3b4851ce5fdf9233ffbd09be29b1966b"
+name = "ds-rewrite-app-4"
+handle = "ds-rewrite-app-4"
+application_url = "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app"
+embedded = true
 
+[auth]
+redirect_urls = [
+  "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app/auth/callback",
+  "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app/auth/shopify/callback",
+  "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app/api/auth/callback"
+]
+
+[access_scopes]
 scopes = "write_products"
 
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
+
+[[additional_pages]]
+handle = "products-list"
+url = "/app/products/list"
+name = "商品リスト"
+
 [webhooks]
-api_version = "2024-10"
+api_version = "2025-04"
 
-  # Handled by: /app/routes/webhooks.app.uninstalled.tsx
   [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
   uri = "/webhooks/app/uninstalled"
-  topics = ["app/uninstalled"]
 
-  # Handled by: /app/routes/webhooks.app.scopes_update.tsx
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
-
-  # Webhooks can have filters
-  # Only receive webhooks for product updates with a product price >= 10.00
-  # See: https://shopify.dev/docs/apps/build/webhooks/customize/filters
-  # [[webhooks.subscriptions]]
-  # topics = ["products/update"]
-  # uri = "/webhooks/products/update"
-  # filter = "variants.price:>=10.00"
-
-  # Mandatory compliance topic for public apps only
-  # See: https://shopify.dev/docs/apps/build/privacy-law-compliance
-  # [[webhooks.subscriptions]]
-  # uri = "/webhooks/customers/data_request"
-  # compliance_topics = ["customers/data_request"]
-
-  # [[webhooks.subscriptions]]
-  # uri = "/webhooks/customers/redact"
-  # compliance_topics = ["customers/redact"]
-
-  # [[webhooks.subscriptions]]
-  # uri = "/webhooks/shop/redact"
-  # compliance_topics = ["shop/redact"]
