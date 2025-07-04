@@ -6,14 +6,17 @@ import {
 } from "@shopify/shopify-app-remix/server";
 import { GraphqlClient } from "@shopify/shopify-api";
 
-// ✅ 完全互換インポート方式
+// ✅ MemorySessionStorage クラスを使って初期化（Vercel互換）
 import * as sessionStorageMemory from "@shopify/shopify-app-session-storage-memory";
-console.log("🧪 module shape:", sessionStorageMemory);
 
-const inMemorySessionStorage =
-  sessionStorageMemory.inMemorySessionStorage ??
-  sessionStorageMemory.default?.inMemorySessionStorage ??
-  sessionStorageMemory.default;
+// ✅ fallback対応：defaultでも MemorySessionStorage から取得
+const memoryStorageClass =
+  sessionStorageMemory.MemorySessionStorage ??
+  sessionStorageMemory.default?.MemorySessionStorage;
+
+if (!memoryStorageClass) {
+  throw new Error("❌ MemorySessionStorage クラスが見つかりません");
+}
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -22,7 +25,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: inMemorySessionStorage(), // ✅ ← ここが問題解消の核心
+  sessionStorage: new memoryStorageClass(), // ✅ クラスインスタンスで初期化
   distribution: AppDistribution.AppStore,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
@@ -33,6 +36,7 @@ const shopify = shopifyApp({
     : {}),
 });
 
+// ✅ Shopify Admin GraphQL クライアント生成
 export function createAdminClient(session) {
   if (!session?.shop || !session?.accessToken) {
     throw new Error("セッション情報が不足しています");
@@ -40,6 +44,7 @@ export function createAdminClient(session) {
   return new GraphqlClient(session);
 }
 
+// ✅ 各種エクスポート
 export default shopify;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
