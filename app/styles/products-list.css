@@ -1,0 +1,60 @@
+/* app/styles/products-list.css */
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.product-table th,
+.product-table td {
+  padding: 12px 8px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #eee;
+}
+
+.product-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.title-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checkbox-cell {
+  width: 40px;
+}
+
+.id-cell {
+  font-family: monospace;
+  color: #666;
+}
+
+.img-cell {
+  width: 60px;
+  text-align: center;
+}
+
+.message-success {
+  background-color: #e6f7e6;
+  color: #256029;
+  padding: 10px;
+  margin: 10px 0;
+  border-left: 5px solid #6cc070;
+  border-radius: 4px;
+  animation: fadeout 2s 3s forwards;
+}
+
+@keyframes fadeout {
+  to {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
