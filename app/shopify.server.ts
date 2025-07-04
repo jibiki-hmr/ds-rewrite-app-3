@@ -6,8 +6,9 @@ import {
 } from "@shopify/shopify-app-remix/server";
 import { GraphqlClient } from "@shopify/shopify-api";
 
-// ✅ 正しい default import 方式
-import inMemorySessionStorage from "@shopify/shopify-app-session-storage-memory";
+// ✅ 対CJS/ESM fallback対応
+import * as sessionStorageMemory from "@shopify/shopify-app-session-storage-memory";
+const inMemorySessionStorage = sessionStorageMemory.default?.inMemorySessionStorage || sessionStorageMemory.inMemorySessionStorage;
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -16,7 +17,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: inMemorySessionStorage(), // ✅ ここが要修正ポイント
+  sessionStorage: inMemorySessionStorage(), // ✅ これで解決！
   distribution: AppDistribution.AppStore,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
