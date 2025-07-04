@@ -17,7 +17,7 @@
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
-    "vercel-build": "npm run build"
+    "vercel-build": "prisma generate && remix vite:build"
   },
   "type": "module",
   "engines": {
@@ -40,8 +40,7 @@
     "prisma": "^6.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "vite-tsconfig-paths": "^5.0.1",
-    "vercel-build": "prisma generate && remix vite:build"
+    "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {
     "@remix-run/eslint-config": "^2.16.1",
