@@ -5,11 +5,9 @@ import {
   AppDistribution,
   shopifyApp,
 } from "@shopify/shopify-app-remix/server";
-import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
-import { GraphqlClient } from "@shopify/shopify-api"; // ✅ Shopify API クライアント
-import prisma from "./db.server";
+import { inMemorySessionStorage } from "@shopify/shopify-app-session-storage-memory";
+import { GraphqlClient } from "@shopify/shopify-api";
 
-// ✅ Shopify アプリの構成
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
@@ -17,7 +15,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
+  sessionStorage: inMemorySessionStorage(),
   distribution: AppDistribution.AppStore,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
@@ -28,16 +26,15 @@ const shopify = shopifyApp({
     : {}),
 });
 
-// ✅ GraphQLクライアント生成関数（安定構成）
+// ✅ GraphQLクライアント生成関数（保持）
 export function createAdminClient(session) {
   if (!session?.shop || !session?.accessToken) {
     throw new Error("セッション情報が不足しています");
   }
-
   return new GraphqlClient(session);
 }
 
-// ✅ エクスポート群
+// ✅ 必要なエクスポート（認証・セッション維持用）
 export default shopify;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
