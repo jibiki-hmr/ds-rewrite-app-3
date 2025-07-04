@@ -4,10 +4,11 @@ import {
   AppDistribution,
   shopifyApp,
 } from "@shopify/shopify-app-remix/server";
+import { GraphqlClient } from "@shopify/shopify-api";
 
-// ✅ CommonJS互換のimport形式
+// ✅ CommonJS互換のメモリセッションストレージの取り出し方
 import sessionStorageMemory from "@shopify/shopify-app-session-storage-memory";
-const { inMemorySessionStorage } = sessionStorageMemory;
+const inMemorySessionStorage = sessionStorageMemory.inMemorySessionStorage;
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -16,7 +17,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: inMemorySessionStorage(), // ✅ 動作するようになる
+  sessionStorage: inMemorySessionStorage(), // ✅ ← ここがメモリ構成の要
   distribution: AppDistribution.AppStore,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
@@ -27,7 +28,7 @@ const shopify = shopifyApp({
     : {}),
 });
 
-// ✅ GraphQLクライアント生成関数（保持）
+// ✅ Shopify Admin API用 GraphQLクライアント生成関数
 export function createAdminClient(session) {
   if (!session?.shop || !session?.accessToken) {
     throw new Error("セッション情報が不足しています");
@@ -35,7 +36,7 @@ export function createAdminClient(session) {
   return new GraphqlClient(session);
 }
 
-// ✅ 必要なエクスポート（認証・セッション維持用）
+// ✅ 必要なエクスポート群
 export default shopify;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
