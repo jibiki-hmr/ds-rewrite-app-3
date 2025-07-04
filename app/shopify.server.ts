@@ -8,6 +8,7 @@ import { GraphqlClient } from "@shopify/shopify-api";
 
 // ✅ 完全互換インポート方式
 import * as sessionStorageMemory from "@shopify/shopify-app-session-storage-memory";
+console.log("🧪 module shape:", sessionStorageMemory);
 
 const inMemorySessionStorage =
   sessionStorageMemory.inMemorySessionStorage ??
