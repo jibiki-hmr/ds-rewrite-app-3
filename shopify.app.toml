@@ -1,14 +1,14 @@
 client_id = "3b4851ce5fdf9233ffbd09be29b1966b"
 name = "ds-rewrite-app-4"
 handle = "ds-rewrite-app-4"
-application_url = "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app"
+application_url = "https://ds-rewrite-app-3.vercel.app"
 embedded = true
 
 [auth]
 redirect_urls = [
-  "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app/auth/callback",
-  "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app/auth/shopify/callback",
-  "https://ds-rewrite-app-3-9tftiesne-jibiki-hmrs-projects.vercel.app/api/auth/callback"
+  "https://ds-rewrite-app-3.vercel.app/auth/callback",
+  "https://ds-rewrite-app-3.vercel.app/auth/shopify/callback",
+  "https://ds-rewrite-app-3.vercel.app/api/auth/callback"
 ]
 
 [access_scopes]
