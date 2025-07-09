@@ -114,10 +114,10 @@ ${product.descriptionHtml}
       }
 
       const metafieldEntries = [
-        { key: "details1", value: specs.details1 },
-        { key: "details2", value: specs.details2 },
-        { key: "details3", value: specs.details3 },
-        { key: "details4", value: specs.details4 },
+        { key: "details01", value: specs.details1 },
+        { key: "details02", value: specs.details2 },
+        { key: "details03", value: specs.details3 },
+        { key: "details04", value: specs.details4 },
       ].filter(entry => entry.value?.trim());
 
       if (metafieldEntries.length > 0) {
@@ -128,10 +128,10 @@ ${product.descriptionHtml}
                 .map(
                   ({ key, value }) => `{
                     ownerId: "${id}",
-                    namespace: "specification",
+                    namespace: "spec",
                     key: "${key}",
-                    type: "single_line_text_field",
-                    value: "${value.replace(/"/g, '\\"')}"
+                    type: "multi_line_text_field",
+                    value: """${value.replace(/"/g, '\\"')}"""
                   }`
                 )
                 .join(",\n")}
