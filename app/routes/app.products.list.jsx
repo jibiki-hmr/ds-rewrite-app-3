@@ -76,6 +76,7 @@ export default function ProductList() {
   const [showOnlyEnglish, setShowOnlyEnglish] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState("");
   const [collectionSearch, setCollectionSearch] = useState("");
+  const [template, setTemplate] = useState("aliexpress");
   const pageSize = 50;
 
   const filteredProducts = products.filter((p) => {
@@ -112,7 +113,10 @@ export default function ProductList() {
   const handleBulkRewrite = () => {
     if (selectedIds.length === 0) return;
     fetcher.submit(
-      { ids: JSON.stringify(selectedIds) },
+      {
+        ids: JSON.stringify(selectedIds),
+        template,
+      },
       { method: "post", action: "/api/bulk-rewrite" }
     );
   };
@@ -126,6 +130,39 @@ export default function ProductList() {
   return (
     <div>
       <h1>商品一覧</h1>
+
+      {fetcher.state === "submitting" && (
+        <p style={{ color: "#2563eb", fontWeight: "bold", marginTop: "8px" }}>
+          ⏳ リライト中...
+        </p>
+      )}
+      {fetcher.state === "idle" && fetcher.data?.status === "success" && (
+        <div className="message-success">
+          ✅ {fetcher.data.count} 件のリライトが完了しました！
+        </div>
+      )}
+
+      <div style={{ marginBottom: "12px" }}>
+        <strong>テンプレート選択：</strong>
+        <label style={{ marginLeft: "12px" }}>
+          <input
+            type="radio"
+            value="aliexpress"
+            checked={template === "aliexpress"}
+            onChange={() => setTemplate("aliexpress")}
+          />
+          aliexpress
+        </label>
+        <label style={{ marginLeft: "12px" }}>
+          <input
+            type="radio"
+            value="alibaba"
+            checked={template === "alibaba"}
+            onChange={() => setTemplate("alibaba")}
+          />
+          alibaba
+        </label>
+      </div>
 
       <div style={{ marginBottom: "12px" }}>
         <input
@@ -246,17 +283,6 @@ export default function ProductList() {
           次へ →
         </button>
       </div>
-
-      {fetcher.state === "submitting" && (
-        <p style={{ color: "#2563eb", fontWeight: "bold", marginTop: "8px" }}>
-          ⏳ リライト中...
-        </p>
-      )}
-      {fetcher.state === "idle" && fetcher.data?.status === "success" && (
-        <div className="message-success">
-          ✅ {fetcher.data.count} 件のリライトが完了しました！
-        </div>
-      )}
     </div>
   );
 }
