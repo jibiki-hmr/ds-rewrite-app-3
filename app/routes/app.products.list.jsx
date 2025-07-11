@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import productListStylesHref from "../styles/products-list.css?url";
 
 export function links() {
@@ -115,6 +115,9 @@ export default function ProductList() {
 
   const [catBigInput, setCatBigInput] = useState("");
   const [catMidInput, setCatMidInput] = useState("");
+const catBigRef = useRef(null);
+const catMidRef = useRef(null);
+
 
   const pageSize = 50;
 
@@ -140,7 +143,23 @@ export default function ProductList() {
     currentPage * pageSize
   );
 
-  const toggleSelect = (id) => {
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (catBigRef.current && !catBigRef.current.contains(event.target)) {
+      setCatBigInput(catBigInput); // 入力は保持、候補だけ閉じるなら別state管理可
+    }
+    if (catMidRef.current && !catMidRef.current.contains(event.target)) {
+      setCatMidInput(catMidInput);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
+
+const toggleSelect = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
