@@ -86,6 +86,7 @@ ${product.descriptionHtml}
             id: "${id}",
             title: "${title}",
             descriptionHtml: """${bodyHtml}""",
+            templateSuffix: "${template}",
             seo: {
               title: "${seoTitle}",
               description: "${seoDescription}"
