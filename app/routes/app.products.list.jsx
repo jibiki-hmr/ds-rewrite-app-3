@@ -13,47 +13,71 @@ export async function loader({ request }) {
   const { authenticate } = await import("../shopify.server");
   const { session } = await authenticate.admin(request);
 
-  const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": session.accessToken,
-    },
-    body: JSON.stringify({
-      query: `{
-        products(first: 100) {
-          edges {
-            node {
-              id
-              title
-              collections(first: 5) {
-                edges {
-                  node {
-                    id
-                    title
+  const fetchAllProducts = async () => {
+    let hasNextPage = true;
+    let endCursor = null;
+    const allProducts = [];
+
+    while (hasNextPage) {
+      const query = `
+        {
+          products(first: 100, query: "variant.fulfillment_service:dsers-fulfillment-service"${endCursor ? `, after: "${endCursor}"` : ""}) {
+            pageInfo {
+              hasNextPage
+            }
+            edges {
+              cursor
+              node {
+                id
+                title
+                collections(first: 5) {
+                  edges {
+                    node {
+                      id
+                      title
+                    }
                   }
                 }
-              }
-              images(first: 1) {
-                edges {
-                  node {
-                    url
+                images(first: 1) {
+                  edges {
+                    node {
+                      url
+                    }
                   }
                 }
               }
             }
           }
         }
-      }`
-    }),
-  });
+      `;
 
-  const jsonRes = await response.json();
-  if (!jsonRes?.data?.products?.edges) {
-    throw new Error("商品データの取得に失敗しました。");
-  }
+      const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": session.accessToken,
+        },
+        body: JSON.stringify({ query }),
+      });
 
-  const products = jsonRes.data.products.edges.map((edge) => edge.node);
+      const jsonRes = await response.json();
+      const result = jsonRes?.data?.products;
+
+      if (!result) throw new Error("商品データの取得に失敗しました。");
+
+      for (const edge of result.edges) {
+        allProducts.push(edge.node);
+      }
+
+      hasNextPage = result.pageInfo.hasNextPage;
+      endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
+    }
+
+    return allProducts;
+  };
+
+  const products = await fetchAllProducts();
+
   const collectionSet = new Set();
   for (const product of products) {
     product.collections.edges.forEach((edge) => {
@@ -64,7 +88,11 @@ export async function loader({ request }) {
   }
   const collectionOptions = Array.from(collectionSet);
 
-  return json({ products, shop: session.shop.replace(".myshopify.com", ""), collectionOptions });
+  return json({
+    products,
+    shop: session.shop.replace(".myshopify.com", ""),
+    collectionOptions,
+  });
 }
 
 export default function ProductList() {
