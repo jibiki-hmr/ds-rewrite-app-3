@@ -1,5 +1,5 @@
 client_id = "3b4851ce5fdf9233ffbd09be29b1966b"
-name = "ds-rewrite-app-4"
+name = "Ali商品リライト"
 handle = "ds-rewrite-app-4"
 application_url = "https://ds-rewrite-app-3.vercel.app"
 embedded = true
