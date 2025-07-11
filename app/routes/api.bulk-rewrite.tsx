@@ -14,14 +14,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const idsJson = formData.get("ids");
+  const template = formData.get("template") || "aliexpress";
   const ids: string[] = JSON.parse((idsJson as string) || "[]");
 
   let updatedCount = 0;
 
   for (const id of ids) {
     try {
-      console.log("🎯 商品ID:", id);
-
       const productQuery = `
         query {
           product(id: "${id}") {
@@ -45,6 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const prompt = `
 以下の商品情報をもとに、日本語の商品説明・SEO・メタフィールドをJSON形式で生成してください。
+テンプレート種別：${template}
 
 【元タイトル】
 ${product.title}
@@ -80,6 +80,7 @@ ${product.descriptionHtml}
 
       const { title, bodyHtml, seoTitle, seoDescription, specs } = parsed;
 
+      // 商品更新
       const productUpdateMutation = `
         mutation {
           productUpdate(product: {
@@ -96,7 +97,6 @@ ${product.descriptionHtml}
           }
         }
       `;
-
       const updateRes = await fetch(`https://${shopDomain}/admin/api/2024-10/graphql.json`, {
         method: "POST",
         headers: {
@@ -113,12 +113,22 @@ ${product.descriptionHtml}
         continue;
       }
 
+      // メタフィールド更新
       const metafieldEntries = [
-        { key: "details01", value: specs.details1 },
-        { key: "details02", value: specs.details2 },
-        { key: "details03", value: specs.details3 },
-        { key: "details04", value: specs.details4 },
-      ].filter(entry => entry.value?.trim());
+        { namespace: "spec", key: "details01", value: specs.details1 },
+        { namespace: "spec", key: "details02", value: specs.details2 },
+        { namespace: "spec", key: "details03", value: specs.details3 },
+        { namespace: "spec", key: "details04", value: specs.details4 },
+      ].filter((entry) => entry.value?.trim());
+
+      // ✅ dropshippingメタフィールドも追加
+      if (template === "aliexpress") {
+        metafieldEntries.push({
+          namespace: "dropshipping.aliexpress",
+          key: "shipping",
+          value: "海外発送",
+        });
+      }
 
       if (metafieldEntries.length > 0) {
         const metafieldsMutation = `
@@ -126,9 +136,9 @@ ${product.descriptionHtml}
             metafieldsSet(metafields: [
               ${metafieldEntries
                 .map(
-                  ({ key, value }) => `{
+                  ({ namespace, key, value }) => `{
                     ownerId: "${id}",
-                    namespace: "spec",
+                    namespace: "${namespace}",
                     key: "${key}",
                     type: "multi_line_text_field",
                     value: """${value.replace(/"/g, '\\"')}"""
