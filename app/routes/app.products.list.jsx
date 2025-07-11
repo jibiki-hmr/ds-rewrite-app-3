@@ -21,7 +21,7 @@ const fetchAllProducts = async () => {
   while (hasNextPage) {
     const query = `
       {
-        products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
+        products(first: 50${endCursor ? `, after: "${endCursor}"` : ""}) {
           pageInfo {
             hasNextPage
           }
