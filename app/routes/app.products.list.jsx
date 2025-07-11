@@ -13,35 +13,43 @@ export async function loader({ request }) {
   const { authenticate } = await import("../shopify.server");
   const { session } = await authenticate.admin(request);
 
-  const fetchAllProducts = async () => {
-    let hasNextPage = true;
-    let endCursor = null;
-    const allProducts = [];
+const fetchAllProducts = async () => {
+  let hasNextPage = true;
+  let endCursor = null;
+  const allProducts = [];
 
-    while (hasNextPage) {
-      const query = `
-        {
-          products(first: 100, query: "variant.fulfillment_service:dsers-fulfillment-service"${endCursor ? `, after: "${endCursor}"` : ""}) {
-            pageInfo {
-              hasNextPage
-            }
-            edges {
-              cursor
-              node {
-                id
-                title
-                collections(first: 5) {
-                  edges {
-                    node {
-                      id
-                      title
-                    }
+  while (hasNextPage) {
+    const query = `
+      {
+        products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
+          pageInfo {
+            hasNextPage
+          }
+          edges {
+            cursor
+            node {
+              id
+              title
+              collections(first: 5) {
+                edges {
+                  node {
+                    id
+                    title
                   }
                 }
-                images(first: 1) {
-                  edges {
-                    node {
-                      url
+              }
+              images(first: 1) {
+                edges {
+                  node {
+                    url
+                  }
+                }
+              }
+              variants(first: 1) {
+                edges {
+                  node {
+                    fulfillmentService {
+                      handle
                     }
                   }
                 }
@@ -49,32 +57,38 @@ export async function loader({ request }) {
             }
           }
         }
-      `;
-
-      const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": session.accessToken,
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      const jsonRes = await response.json();
-      const result = jsonRes?.data?.products;
-
-      if (!result) throw new Error("商品データの取得に失敗しました。");
-
-      for (const edge of result.edges) {
-        allProducts.push(edge.node);
       }
+    `;
 
-      hasNextPage = result.pageInfo.hasNextPage;
-      endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
+    const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": session.accessToken,
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    const jsonRes = await response.json();
+    const result = jsonRes?.data?.products;
+    if (!result) throw new Error("商品データの取得に失敗しました。");
+
+    for (const edge of result.edges) {
+      const product = edge.node;
+      const variant = product.variants.edges[0]?.node;
+      const handle = variant?.fulfillmentService?.handle;
+
+      if (handle === "dsers-fulfillment-service") {
+        allProducts.push(product);
+      }
     }
 
-    return allProducts;
-  };
+    hasNextPage = result.pageInfo.hasNextPage;
+    endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
+  }
+
+  return allProducts;
+};
 
   const products = await fetchAllProducts();
 
