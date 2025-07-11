@@ -1,4 +1,3 @@
-// app/routes/api.bulk-rewrite.tsx
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import { OpenAI } from "openai";
@@ -80,7 +79,6 @@ ${product.descriptionHtml}
 
       const { title, bodyHtml, seoTitle, seoDescription, specs } = parsed;
 
-      // 商品更新
       const productUpdateMutation = `
         mutation {
           productUpdate(product: {
@@ -113,61 +111,50 @@ ${product.descriptionHtml}
         continue;
       }
 
-      // メタフィールド更新
+      // ✅ 各メタフィールドを type 付きで登録
       const metafieldEntries = [
-        { namespace: "spec", key: "details01", value: specs.details1 },
-        { namespace: "spec", key: "details02", value: specs.details2 },
-        { namespace: "spec", key: "details03", value: specs.details3 },
-        { namespace: "spec", key: "details04", value: specs.details4 },
+        { namespace: "spec", key: "details01", value: specs.details1, type: "multi_line_text_field" },
+        { namespace: "spec", key: "details02", value: specs.details2, type: "multi_line_text_field" },
+        { namespace: "spec", key: "details03", value: specs.details3, type: "multi_line_text_field" },
+        { namespace: "spec", key: "details04", value: specs.details4, type: "multi_line_text_field" },
+        { namespace: "dropshipping", key: "aliexpress", value: "海外発送", type: "single_line_text_field" }
       ].filter((entry) => entry.value?.trim());
 
-      // ✅ dropshippingメタフィールドも追加
-      if (template === "aliexpress") {
-        metafieldEntries.push({
-          namespace: "dropshipping",
-          key: "aliexpress",
-          value: "海外発送",
-          type: "single_line_text_field"
-        });
-      }
-
-      if (metafieldEntries.length > 0) {
-        const metafieldsMutation = `
-          mutation {
-            metafieldsSet(metafields: [
-              ${metafieldEntries
-                .map(
-                  ({ namespace, key, value, type }) => `{
-                    ownerId: "${id}",
-                    namespace: "${namespace}",
-                    key: "${key}",
-                    type: "${type}",
-                    value: """${value.replace(/"/g, '\\"')}"""
-                  }`
-                )
-                .join(",\n")}
-            ]) {
-              metafields { key value }
-              userErrors { message }
-            }
+      const metafieldsMutation = `
+        mutation {
+          metafieldsSet(metafields: [
+            ${metafieldEntries
+              .map(
+                ({ namespace, key, value, type }) => `{
+                  ownerId: "${id}",
+                  namespace: "${namespace}",
+                  key: "${key}",
+                  type: "${type}",
+                  value: """${value.replace(/"/g, '\\"')}"""
+                }`
+              )
+              .join(",\n")}
+          ]) {
+            metafields { key value }
+            userErrors { message }
           }
-        `;
-
-        const metafieldRes = await fetch(`https://${shopDomain}/admin/api/2024-01/graphql.json`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Shopify-Access-Token": accessToken ?? "",
-          },
-          body: JSON.stringify({ query: metafieldsMutation }),
-        });
-
-        const metaJson = await metafieldRes.json();
-        const metaErrors = metaJson.data.metafieldsSet.userErrors;
-        if (metaErrors.length > 0) {
-          console.error("❌ メタフィールドエラー:", metaErrors);
-          continue;
         }
+      `;
+
+      const metafieldRes = await fetch(`https://${shopDomain}/admin/api/2024-01/graphql.json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": accessToken ?? "",
+        },
+        body: JSON.stringify({ query: metafieldsMutation }),
+      });
+
+      const metaJson = await metafieldRes.json();
+      const metaErrors = metaJson.data.metafieldsSet.userErrors;
+      if (metaErrors.length > 0) {
+        console.error("❌ メタフィールドエラー:", metaErrors);
+        continue;
       }
 
       updatedCount += 1;
