@@ -1,5 +1,3 @@
-// ✅ 拡張対応：100件以上のコレクション対応（検索＋選択式）
-
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
@@ -13,43 +11,44 @@ export async function loader({ request }) {
   const { authenticate } = await import("../shopify.server");
   const { session } = await authenticate.admin(request);
 
-const fetchAllProducts = async () => {
-  let hasNextPage = true;
-  let endCursor = null;
-  const allProducts = [];
+  const fetchAllProducts = async () => {
+    let hasNextPage = true;
+    let endCursor = null;
+    const allProducts = [];
 
-  while (hasNextPage) {
-    const query = `
-      {
-        products(first: 50${endCursor ? `, after: "${endCursor}"` : ""}) {
-          pageInfo {
-            hasNextPage
-          }
-          edges {
-            cursor
-            node {
-              id
-              title
-              collections(first: 5) {
-                edges {
-                  node {
-                    id
-                    title
+    while (hasNextPage) {
+      const query = `
+        {
+          products(first: 100${endCursor ? `, after: \"${endCursor}\"` : ""}) {
+            pageInfo {
+              hasNextPage
+            }
+            edges {
+              cursor
+              node {
+                id
+                title
+                collections(first: 5) {
+                  edges {
+                    node {
+                      id
+                      title
+                    }
                   }
                 }
-              }
-              images(first: 1) {
-                edges {
-                  node {
-                    url
+                images(first: 1) {
+                  edges {
+                    node {
+                      url
+                    }
                   }
                 }
-              }
-              variants(first: 1) {
-                edges {
-                  node {
-                    fulfillmentService {
-                      handle
+                variants(first: 1) {
+                  edges {
+                    node {
+                      fulfillmentService {
+                        handle
+                      }
                     }
                   }
                 }
@@ -57,38 +56,36 @@ const fetchAllProducts = async () => {
             }
           }
         }
+      `;
+
+      const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": session.accessToken,
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      const jsonRes = await response.json();
+      const result = jsonRes?.data?.products;
+      if (!result) throw new Error("商品データの取得に失敗しました。");
+
+      for (const edge of result.edges) {
+        const product = edge.node;
+        const variant = product.variants.edges[0]?.node;
+        const handle = variant?.fulfillmentService?.handle;
+        if (handle === "dsers-fulfillment-service") {
+          allProducts.push(product);
+        }
       }
-    `;
 
-    const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": session.accessToken,
-      },
-      body: JSON.stringify({ query }),
-    });
-
-    const jsonRes = await response.json();
-    const result = jsonRes?.data?.products;
-    if (!result) throw new Error("商品データの取得に失敗しました。");
-
-    for (const edge of result.edges) {
-      const product = edge.node;
-      const variant = product.variants.edges[0]?.node;
-      const handle = variant?.fulfillmentService?.handle;
-
-      if (handle === "dsers-fulfillment-service") {
-        allProducts.push(product);
-      }
+      hasNextPage = result.pageInfo.hasNextPage;
+      endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
     }
 
-    hasNextPage = result.pageInfo.hasNextPage;
-    endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
-  }
-
-  return allProducts;
-};
+    return allProducts;
+  };
 
   const products = await fetchAllProducts();
 
@@ -102,11 +99,7 @@ const fetchAllProducts = async () => {
   }
   const collectionOptions = Array.from(collectionSet);
 
-  return json({
-    products,
-    shop: session.shop.replace(".myshopify.com", ""),
-    collectionOptions,
-  });
+  return json({ products, shop: session.shop.replace(".myshopify.com", ""), collectionOptions });
 }
 
 export default function ProductList() {
@@ -119,7 +112,18 @@ export default function ProductList() {
   const [selectedCollection, setSelectedCollection] = useState("");
   const [collectionSearch, setCollectionSearch] = useState("");
   const [template, setTemplate] = useState("aliexpress");
+
+  const [catBigInput, setCatBigInput] = useState("");
+  const [catMidInput, setCatMidInput] = useState("");
+
   const pageSize = 50;
+
+  const filteredCatBigOptions = collectionOptions.filter((col) =>
+    col.toLowerCase().includes(catBigInput.toLowerCase())
+  ).slice(0, 20);
+  const filteredCatMidOptions = collectionOptions.filter((col) =>
+    col.toLowerCase().includes(catMidInput.toLowerCase())
+  ).slice(0, 20);
 
   const filteredProducts = products.filter((p) => {
     const title = p.title.toLowerCase();
@@ -158,6 +162,8 @@ export default function ProductList() {
       {
         ids: JSON.stringify(selectedIds),
         template,
+        cat_big: catBigInput,
+        cat_mid: catMidInput,
       },
       { method: "post", action: "/api/bulk-rewrite" }
     );
@@ -204,6 +210,72 @@ export default function ProductList() {
           />
           alibaba
         </label>
+      </div>
+
+      {/* cat_big input */}
+      <div style={{ marginBottom: "12px" }}>
+        <label><strong>パンくず大カテ（cat_big）</strong></label><br />
+        <input
+          type="text"
+          placeholder="コレクション名を入力..."
+          value={catBigInput}
+          onChange={(e) => setCatBigInput(e.target.value)}
+          style={{ padding: "6px", width: "300px" }}
+        />
+        {catBigInput && filteredCatBigOptions.length > 0 && (
+          <ul style={{
+            listStyle: "none", padding: "4px", marginTop: "4px",
+            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
+            width: "300px", background: "#fff", position: "absolute", zIndex: 10
+          }}>
+            {filteredCatBigOptions.map((option) => (
+              <li
+                key={option}
+                onClick={() => setCatBigInput(option)}
+                style={{
+                  padding: "6px",
+                  cursor: "pointer",
+                  backgroundColor: catBigInput === option ? "#eee" : "transparent"
+                }}
+              >
+                {option}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* cat_mid input */}
+      <div style={{ marginBottom: "12px" }}>
+        <label><strong>パンくず中カテ（cat_mid）</strong></label><br />
+        <input
+          type="text"
+          placeholder="コレクション名を入力..."
+          value={catMidInput}
+          onChange={(e) => setCatMidInput(e.target.value)}
+          style={{ padding: "6px", width: "300px" }}
+        />
+        {catMidInput && filteredCatMidOptions.length > 0 && (
+          <ul style={{
+            listStyle: "none", padding: "4px", marginTop: "4px",
+            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
+            width: "300px", background: "#fff", position: "absolute", zIndex: 10
+          }}>
+            {filteredCatMidOptions.map((option) => (
+              <li
+                key={option}
+                onClick={() => setCatMidInput(option)}
+                style={{
+                  padding: "6px",
+                  cursor: "pointer",
+                  backgroundColor: catMidInput === option ? "#eee" : "transparent"
+                }}
+              >
+                {option}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div style={{ marginBottom: "12px" }}>
