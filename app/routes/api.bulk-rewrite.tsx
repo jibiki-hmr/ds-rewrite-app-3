@@ -14,6 +14,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const idsJson = formData.get("ids");
   const template = formData.get("template") || "aliexpress";
+  console.log("📦 受信したテンプレート:", template);
   const ids: string[] = JSON.parse((idsJson as string) || "[]");
 
   let updatedCount = 0;
