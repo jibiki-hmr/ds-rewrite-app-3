@@ -124,9 +124,10 @@ ${product.descriptionHtml}
       // ✅ dropshippingメタフィールドも追加
       if (template === "aliexpress") {
         metafieldEntries.push({
-          namespace: "dropshipping.aliexpress",
-          key: "shipping",
+          namespace: "dropshipping",
+          key: "aliexpress",
           value: "海外発送",
+          type: "single_line_text_field"
         });
       }
 
@@ -136,11 +137,11 @@ ${product.descriptionHtml}
             metafieldsSet(metafields: [
               ${metafieldEntries
                 .map(
-                  ({ namespace, key, value }) => `{
+                  ({ namespace, key, value, type }) => `{
                     ownerId: "${id}",
                     namespace: "${namespace}",
                     key: "${key}",
-                    type: "multi_line_text_field",
+                    type: "${type}",
                     value: """${value.replace(/"/g, '\\"')}"""
                   }`
                 )
