@@ -16,13 +16,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const template = formData.get("template") || "aliexpress";
   const cat_big = formData.get("cat_big") || "";
   const cat_mid = formData.get("cat_mid") || "";
-  console.log("📦 受信したテンプレート:", template);
   const ids: string[] = JSON.parse((idsJson as string) || "[]");
 
   let updatedCount = 0;
 
   for (const id of ids) {
     try {
+      // 1. 商品情報取得
       const productQuery = `
         query {
           product(id: "${id}") {
@@ -44,6 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const productJson = await productRes.json();
       const product = productJson.data.product;
 
+      // 2. OpenAIプロンプト生成
       const prompt = `
 以下の商品情報をもとに、日本語の商品説明・SEO・メタフィールドをJSON形式で生成してください。
 テンプレート種別：${template}
@@ -115,16 +116,16 @@ ${product.descriptionHtml}
         continue;
       }
 
-      // ✅ 各メタフィールドを type 付きで登録
+      // 4. メタフィールド保存（specs + cat_big / cat_mid）
       const metafieldEntries = [
         { namespace: "spec", key: "details01", value: specs.details1, type: "multi_line_text_field" },
         { namespace: "spec", key: "details02", value: specs.details2, type: "multi_line_text_field" },
         { namespace: "spec", key: "details03", value: specs.details3, type: "multi_line_text_field" },
         { namespace: "spec", key: "details04", value: specs.details4, type: "multi_line_text_field" },
         { namespace: "dropshipping", key: "aliexpress", value: "海外発送", type: "single_line_text_field" },
-        { namespace: "breadcrumbs", key: "cat_big", value: cat_big, type: "single_line_text_field" },
-        { namespace: "breadcrumbs", key: "cat_mid", value: cat_mid, type: "single_line_text_field" }
-      ].filter((entry) => entry.value?.trim());
+        { namespace: "breadcrumbs", key: "cat_big", value: cat_big.toString(), type: "single_line_text_field" },
+        { namespace: "breadcrumbs", key: "cat_mid", value: cat_mid.toString(), type: "single_line_text_field" },
+      ].filter((entry) => entry.value && entry.value.toString().trim() !== "");
 
       const metafieldsMutation = `
         mutation {
@@ -136,7 +137,7 @@ ${product.descriptionHtml}
                   namespace: "${namespace}",
                   key: "${key}",
                   type: "${type}",
-                  value: """${value.replace(/"/g, '\\"')}"""
+                  value: """${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"""
                 }`
               )
               .join(",\n")}
