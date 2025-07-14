@@ -122,8 +122,8 @@ ${product.descriptionHtml}
         { namespace: "spec", key: "details03", value: specs.details3, type: "multi_line_text_field" },
         { namespace: "spec", key: "details04", value: specs.details4, type: "multi_line_text_field" },
         { namespace: "dropshipping", key: "aliexpress", value: "海外発送", type: "single_line_text_field" },
-        { namespace: "breadcrumbs", key: "cat_big", value: cat_big.toString(), type: "single_line_text_field" },
-        { namespace: "breadcrumbs", key: "cat_mid", value: cat_mid.toString(), type: "single_line_text_field" },
+        { namespace: "breadcrumbs",  key: "cat_big",  type: "collection_reference",  value: cat_big },
+        { namespace: "breadcrumbs",  key: "cat_mid",  type: "collection_reference",  value: cat_mid }
       ].filter((entry) => entry.value && entry.value.toString().trim() !== "");
 
       const metafieldsMutation = `
