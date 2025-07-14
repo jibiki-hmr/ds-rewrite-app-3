@@ -101,6 +101,7 @@ export async function loader({ request }) {
       collectionOptions,
     });
 }
+}
 
 export default function ProductList() {
   const { products, shop, collectionOptions } = useLoaderData();
