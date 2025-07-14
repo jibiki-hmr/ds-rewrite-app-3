@@ -360,7 +360,7 @@ export default function ProductList() {
           placeholder="コレクション名を入力..."
           value={catMidInput.title}
           onChange={(e) => {
-            setCatMidInput({ ...catMidInput, title: e.target.value });
+            setCatMidInput({ id: "", title: e.target.value, handle: "" });
             setShowCatMidSuggestions(true);
           }}
           onFocus={() => setShowCatMidSuggestions(true)}
@@ -383,6 +383,7 @@ export default function ProductList() {
             <li
               key={option.id}
               onClick={() => {
+                console.log("🟢 選択した中カテ option:", option); // ← ここで handle が含まれているか確認！
                 setCatMidInput(option);
                 setShowCatMidSuggestions(false);
               }}
