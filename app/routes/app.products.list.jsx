@@ -105,7 +105,7 @@ export default function ProductList() {
   const [selectedCollection, setSelectedCollection] = useState("");
   const [collectionSearch, setCollectionSearch] = useState("");
   const [template, setTemplate] = useState("aliexpress");
-
+  const [productType, setProductType] = useState("");
   const [catBigInput, setCatBigInput] = useState({ id: "", title: "" });
   const [catMidInput, setCatMidInput] = useState({ id: "", title: "" });
   const [showCatBigSuggestions, setShowCatBigSuggestions] = useState(false);
@@ -187,6 +187,7 @@ export default function ProductList() {
         template,
         cat_big: catBigInput.id,
         cat_mid: catMidInput.id,
+        product_type: productType,
       },
       { method: "post", action: "/api/bulk-rewrite" }
     );
@@ -229,6 +230,17 @@ export default function ProductList() {
           />
           alibaba
         </label>
+      </div>
+
+      <div style={{ marginBottom: "12px" }}>
+        <label><strong>商品タイプ（product_type）</strong></label><br />
+        <input
+          type="text"
+          placeholder="例：ネオンサイン、バナーなど"
+          value={productType}
+          onChange={(e) => setProductType(e.target.value)}
+          style={{ padding: "6px", width: "300px" }}
+        />
       </div>
 
       {/* ✅ キーワード検索＋英語フィルター */}
