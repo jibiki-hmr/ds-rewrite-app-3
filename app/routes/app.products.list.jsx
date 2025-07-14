@@ -28,7 +28,7 @@ export async function loader({ request }) {
                 title
                 collections(first: 5) {
                   edges {
-                    node { id title }
+                    node { id title handle }
                   }
                 }
                 images(first: 1) {
