@@ -119,6 +119,11 @@ export default function ProductList() {
     col.title.toLowerCase().includes(catBigInput.title.toLowerCase())
   )
   .slice(0, 20);
+  const filteredCatMidOptions = collectionOptions
+  .filter((col) =>
+    col.title.toLowerCase().includes(catMidInput.title.toLowerCase())
+  )
+  .slice(0, 20);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -344,31 +349,39 @@ export default function ProductList() {
           onFocus={() => setShowCatMidSuggestions(true)}
           style={{ padding: "6px", width: "300px" }}
         />
-        {showCatMidSuggestions && filteredCollections.length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: "4px", marginTop: "4px",
-            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
-            width: "300px", background: "#fff", position: "absolute", zIndex: 10
-          }}>
-            {filteredCollections.map((option) => (
-              <li
-                key={option.id}
-                onClick={() => {
-                  setCatMidInput(option);
-                  setShowCatMidSuggestions(false);
-                }}
-                style={{
-                  padding: "6px",
-                  cursor: "pointer",
-                  backgroundColor: catMidInput.title === option.title ? "#eee" : "transparent"
-                }}
-              >
-                {option.title}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+        {showCatMidSuggestions && filteredCatMidOptions.length > 0 && (
+        <ul style={{
+          listStyle: "none",
+          padding: "0",
+          marginTop: "4px",
+          border: "1px solid #ccc",
+          maxHeight: "120px",
+          overflowY: "auto",
+          backgroundColor: "#fff",
+          position: "absolute",
+          zIndex: 10,
+          width: "300px",
+        }}>
+          {filteredCatMidOptions.map((option) => (
+            <li
+              key={option.id}
+              onClick={() => {
+                setCatMidInput(option);
+                setShowCatMidSuggestions(false);
+              }}
+              style={{
+                padding: "6px",
+                cursor: "pointer",
+                borderBottom: "1px solid #eee",
+                backgroundColor: catMidInput.id === option.id ? "#f0f0f0" : "white"
+              }}
+            >
+              {option.title}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
 
       {/* ✅ 一括処理と選択カウント */}
       <div style={{ marginBottom: "12px" }}>
