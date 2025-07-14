@@ -1,3 +1,4 @@
+
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
@@ -137,6 +138,12 @@ export default function ProductList() {
   }, []);
 
   const pageSize = 50;
+  const filteredCollections = collectionSearch.trim()
+    ? collectionOptions.filter((name) =>
+        name.toLowerCase().includes(collectionSearch.toLowerCase())
+      ).slice(0, 20)
+    : [];
+
   const filteredProducts = products.filter((p) => {
     const title = p.title.toLowerCase();
     const matchKeyword = !filterKeyword || title.includes(filterKeyword.toLowerCase());
@@ -190,6 +197,64 @@ export default function ProductList() {
 
   return (
     <div>
+      <h1>商品一覧</h1>
+
+      {fetcher.state === "submitting" && (
+        <p style={{ color: "#2563eb", fontWeight: "bold", marginTop: "8px" }}>
+          ⏳ リライト中...
+        </p>
+      )}
+      {fetcher.state === "idle" && fetcher.data?.status === "success" && (
+        <div className="message-success" style={{ color: "green", marginTop: "8px" }}>
+          ✅ {fetcher.data.count} 件のリライトが完了しました！
+        </div>
+      )}
+
+      <div style={{ marginBottom: "12px" }}>
+        <input
+          type="text"
+          placeholder="キーワード検索（タイトル）"
+          value={filterKeyword}
+          onChange={(e) => setFilterKeyword(e.target.value)}
+          style={{ padding: "6px", width: "300px", marginRight: "12px" }}
+        />
+        <label style={{ fontSize: "14px" }}>
+          <input
+            type="checkbox"
+            checked={showOnlyEnglish}
+            onChange={(e) => setShowOnlyEnglish(e.target.checked)}
+            style={{ marginRight: "6px" }}
+          />
+          「英語」を含む商品名のみ
+        </label>
+      </div>
+
+      <div style={{ marginBottom: "12px" }}>
+        <input
+          type="text"
+          placeholder="コレクション名で検索"
+          value={collectionSearch}
+          onChange={(e) => setCollectionSearch(e.target.value)}
+          style={{ padding: "6px", width: "300px" }}
+        />
+        {filteredCollections.length > 0 && (
+          <ul style={{ listStyle: "none", margin: "6px 0", padding: 0, maxHeight: "120px", overflowY: "auto" }}>
+            {filteredCollections.map((col) => (
+              <li
+                key={col}
+                onClick={() => setSelectedCollection(col)}
+                style={{ cursor: "pointer", padding: "4px 8px", backgroundColor: selectedCollection === col ? "#eee" : "transparent" }}
+              >
+                {col}
+              </li>
+            ))}
+            {selectedCollection && (
+              <li style={{ color: "#888", cursor: "pointer", padding: "4px 8px" }} onClick={() => setSelectedCollection("")}>× 絞り込み解除</li>
+            )}
+          </ul>
+        )}
+      </div>
+
       <div ref={catBigRef} style={{ position: "relative", marginBottom: "12px" }}>
         <label>パンくず大カテ</label><br />
         <input
