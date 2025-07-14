@@ -19,7 +19,7 @@ export async function loader({ request }) {
     while (hasNextPage) {
       const query = `
         {
-          products(first: 100${endCursor ? `, after: \"${endCursor}\"` : ""}) {
+          products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
             pageInfo {
               hasNextPage
             }
@@ -115,9 +115,25 @@ export default function ProductList() {
 
   const [catBigInput, setCatBigInput] = useState("");
   const [catMidInput, setCatMidInput] = useState("");
-const catBigRef = useRef(null);
-const catMidRef = useRef(null);
 
+  const catBigRef = useRef(null);
+  const catMidRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (catBigRef.current && !catBigRef.current.contains(event.target)) {
+        setCatBigInput((prev) => prev); // 入力保持、候補だけ閉じたい場合は別stateを管理
+      }
+      if (catMidRef.current && !catMidRef.current.contains(event.target)) {
+        setCatMidInput((prev) => prev);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const pageSize = 50;
 
@@ -143,23 +159,7 @@ const catMidRef = useRef(null);
     currentPage * pageSize
   );
 
-  useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (catBigRef.current && !catBigRef.current.contains(event.target)) {
-      setCatBigInput(catBigInput); // 入力は保持、候補だけ閉じるなら別state管理可
-    }
-    if (catMidRef.current && !catMidRef.current.contains(event.target)) {
-      setCatMidInput(catMidInput);
-    }
-  };
-
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
-
-const toggleSelect = (id) => {
+  const toggleSelect = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -231,8 +231,8 @@ const toggleSelect = (id) => {
         </label>
       </div>
 
-      {/* cat_big input */}
-      <div style={{ marginBottom: "12px" }}>
+      {/* パンくず大カテ入力 */}
+      <div style={{ marginBottom: "12px", position: "relative" }} ref={catBigRef}>
         <label><strong>パンくず大カテ（cat_big）</strong></label><br />
         <input
           type="text"
@@ -264,8 +264,8 @@ const toggleSelect = (id) => {
         )}
       </div>
 
-      {/* cat_mid input */}
-      <div style={{ marginBottom: "12px" }}>
+      {/* パンくず中カテ入力 */}
+      <div style={{ marginBottom: "12px", position: "relative" }} ref={catMidRef}>
         <label><strong>パンくず中カテ（cat_mid）</strong></label><br />
         <input
           type="text"
