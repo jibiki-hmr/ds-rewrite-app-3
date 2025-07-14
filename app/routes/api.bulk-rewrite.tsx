@@ -22,7 +22,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   for (const id of ids) {
     try {
-      // 1. 商品情報取得
       const productQuery = `
         query {
           product(id: "${id}") {
@@ -44,7 +43,6 @@ export async function action({ request }: ActionFunctionArgs) {
       const productJson = await productRes.json();
       const product = productJson.data.product;
 
-      // 2. OpenAIプロンプト生成
       const prompt = `
 以下の商品情報をもとに、日本語の商品説明・SEO・メタフィールドをJSON形式で生成してください。
 テンプレート種別：${template}
@@ -68,7 +66,8 @@ ${product.descriptionHtml}
     "details3": "用途に関する仕様",
     "details4": "電源に関する仕様（なければ空文字）"
   }
-}`;
+}
+      `;
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -116,7 +115,7 @@ ${product.descriptionHtml}
         continue;
       }
 
-      // 4. メタフィールド保存（specs + cat_big / cat_mid）
+      // メタフィールドの登録（specs + cat_big / cat_mid）
       const metafieldEntries = [
         { namespace: "spec", key: "details01", value: specs.details1, type: "multi_line_text_field" },
         { namespace: "spec", key: "details02", value: specs.details2, type: "multi_line_text_field" },
@@ -130,17 +129,15 @@ ${product.descriptionHtml}
       const metafieldsMutation = `
         mutation {
           metafieldsSet(metafields: [
-            ${metafieldEntries
-              .map(
-                ({ namespace, key, value, type }) => `{
-                  ownerId: "${id}",
-                  namespace: "${namespace}",
-                  key: "${key}",
-                  type: "${type}",
-                  value: """${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"""
-                }`
-              )
-              .join(",\n")}
+            ${metafieldEntries.map(
+              ({ namespace, key, value, type }) => `{
+                ownerId: "${id}",
+                namespace: "${namespace}",
+                key: "${key}",
+                type: "${type}",
+                value: """${value.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\"')}"""
+              }`
+            ).join(",\n")}
           ]) {
             metafields { key value }
             userErrors { message }
