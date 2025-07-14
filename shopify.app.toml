@@ -12,7 +12,7 @@ redirect_urls = [
 ]
 
 [access_scopes]
-scopes = "write_products"
+scopes = "read_products,write_products"
 
 [build]
 include_config_on_deploy = true
