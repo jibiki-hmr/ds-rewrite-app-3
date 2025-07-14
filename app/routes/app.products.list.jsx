@@ -20,9 +20,7 @@ export async function loader({ request }) {
       const query = `
         {
           products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
-            pageInfo {
-              hasNextPage
-            }
+            pageInfo { hasNextPage }
             edges {
               cursor
               node {
@@ -30,25 +28,18 @@ export async function loader({ request }) {
                 title
                 collections(first: 5) {
                   edges {
-                    node {
-                      id
-                      title
-                    }
+                    node { id title }
                   }
                 }
                 images(first: 1) {
                   edges {
-                    node {
-                      url
-                    }
+                    node { url }
                   }
                 }
                 variants(first: 1) {
                   edges {
                     node {
-                      fulfillmentService {
-                        handle
-                      }
+                      fulfillmentService { handle }
                     }
                   }
                 }
@@ -81,7 +72,7 @@ export async function loader({ request }) {
       }
 
       return allProducts;
-    };
+    }; // ✅ fetchAllProducts を正しく閉じる
 
     const products = await fetchAllProducts();
 
@@ -100,8 +91,8 @@ export async function loader({ request }) {
       shop: session.shop.replace(".myshopify.com", ""),
       collectionOptions,
     });
-}
-}
+} // ✅ loader を正しく閉じる
+} 
 
 export default function ProductList() {
   const { products, shop, collectionOptions } = useLoaderData();
