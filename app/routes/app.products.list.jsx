@@ -214,40 +214,7 @@ export default function ProductList() {
         </div>
       )}
 
-      {/* ✅ テンプレート選択 */}
-      <div style={{ marginBottom: "12px" }}>
-        <strong>テンプレート選択：</strong>
-        <label style={{ marginLeft: "12px" }}>
-          <input
-            type="radio"
-            value="aliexpress"
-            checked={template === "aliexpress"}
-            onChange={() => setTemplate("aliexpress")}
-          />
-          aliexpress
-        </label>
-        <label style={{ marginLeft: "12px" }}>
-          <input
-            type="radio"
-            value="alibaba"
-            checked={template === "alibaba"}
-            onChange={() => setTemplate("alibaba")}
-          />
-          alibaba
-        </label>
-      </div>
-
-      <div style={{ marginBottom: "12px" }}>
-        <label><strong>商品タイプ（product_type）</strong></label><br />
-        <input
-          type="text"
-          placeholder="例：ネオンサイン、バナーなど"
-          value={productType}
-          onChange={(e) => setProductType(e.target.value)}
-          style={{ padding: "6px", width: "300px" }}
-        />
-      </div>
-
+    <h2>商品絞込み</h2>
       {/* ✅ キーワード検索＋英語フィルター */}
       <div style={{ marginBottom: "12px" }}>
         <input
@@ -302,6 +269,41 @@ export default function ProductList() {
             )}
           </ul>
         )}
+      </div>
+
+      <h2>リライト設定</h2>
+      {/* ✅ テンプレート選択 */}
+      <div style={{ marginBottom: "12px" }}>
+        <strong>テンプレート選択：</strong>
+        <label style={{ marginLeft: "12px" }}>
+          <input
+            type="radio"
+            value="aliexpress"
+            checked={template === "aliexpress"}
+            onChange={() => setTemplate("aliexpress")}
+          />
+          aliexpress
+        </label>
+        <label style={{ marginLeft: "12px" }}>
+          <input
+            type="radio"
+            value="alibaba"
+            checked={template === "alibaba"}
+            onChange={() => setTemplate("alibaba")}
+          />
+          alibaba
+        </label>
+      </div>
+
+      <div style={{ marginBottom: "12px" }}>
+        <label><strong>商品タイプ（product_type）</strong></label><br />
+        <input
+          type="text"
+          placeholder="例：ネオンサイン、バナーなど"
+          value={productType}
+          onChange={(e) => setProductType(e.target.value)}
+          style={{ padding: "6px", width: "300px" }}
+        />
       </div>
 
       {/* ✅ パンくず大カテ入力 */}
