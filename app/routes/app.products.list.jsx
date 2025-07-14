@@ -209,6 +209,28 @@ export default function ProductList() {
           ✅ {fetcher.data.count} 件のリライトが完了しました！
         </div>
       )}
+      
+      <div style={{ marginBottom: "12px" }}>
+        <strong>テンプレート選択：</strong>
+        <label style={{ marginLeft: "12px" }}>
+          <input
+            type="radio"
+            value="aliexpress"
+            checked={template === "aliexpress"}
+            onChange={() => setTemplate("aliexpress")}
+          />
+          aliexpress
+        </label>
+        <label style={{ marginLeft: "12px" }}>
+          <input
+            type="radio"
+            value="alibaba"
+            checked={template === "alibaba"}
+            onChange={() => setTemplate("alibaba")}
+          />
+          alibaba
+        </label>
+      </div>
 
       <div style={{ marginBottom: "12px" }}>
         <input
