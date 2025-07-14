@@ -1,4 +1,4 @@
-import { json } from "@remix-run/node";
+﻿import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
 import productListStylesHref from "../styles/products-list.css?url";
