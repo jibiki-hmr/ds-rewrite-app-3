@@ -250,7 +250,10 @@ export default function ProductList() {
             {filteredCatBigOptions.map((option) => (
               <li
                 key={option}
-                onClick={() => setCatBigInput(option)}
+                onClick={() => {
+                  setCatBigInput(option);
+                  setTimeout(() => document.activeElement.blur(), 0); // 入力欄のフォーカス解除でリストが閉じる
+                }}
                 style={{
                   padding: "6px",
                   cursor: "pointer",
