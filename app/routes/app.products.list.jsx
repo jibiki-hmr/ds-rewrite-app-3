@@ -326,7 +326,7 @@ export default function ProductList() {
         <label><strong>パンくず大カテ（cat_big）</strong></label><br />
         <input
           type="text"
-          placeholder="コレクション名を入力..."
+          placeholder="大カテ用コレクション名入力"
           value={catBigInput.title}
           onChange={(e) => {
             setCatBigInput({ ...catBigInput, title: e.target.value });
@@ -374,7 +374,7 @@ export default function ProductList() {
         <label><strong>パンくず中カテ（cat_mid）</strong></label><br />
         <input
           type="text"
-          placeholder="コレクション名を入力..."
+          placeholder="中カテ用コレクション名入力"
           value={catMidInput.title}
           onChange={(e) => {
             setCatMidInput({ id: "", title: e.target.value, handle: "" });
