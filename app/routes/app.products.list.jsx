@@ -115,6 +115,8 @@ export default function ProductList() {
 
   const [catBigInput, setCatBigInput] = useState("");
   const [catMidInput, setCatMidInput] = useState("");
+  const [showCatBigSuggestions, setShowCatBigSuggestions] = useState(false);
+  const [showCatMidSuggestions, setShowCatMidSuggestions] = useState(false);
 
   const catBigRef = useRef(null);
   const catMidRef = useRef(null);
@@ -122,13 +124,12 @@ export default function ProductList() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (catBigRef.current && !catBigRef.current.contains(event.target)) {
-        setCatBigInput((prev) => prev); // 入力保持、候補だけ閉じたい場合は別stateを管理
+        setShowCatBigSuggestions(false);
       }
       if (catMidRef.current && !catMidRef.current.contains(event.target)) {
-        setCatMidInput((prev) => prev);
+        setShowCatMidSuggestions(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -136,14 +137,6 @@ export default function ProductList() {
   }, []);
 
   const pageSize = 50;
-
-  const filteredCatBigOptions = collectionOptions.filter((col) =>
-    col.toLowerCase().includes(catBigInput.toLowerCase())
-  ).slice(0, 20);
-  const filteredCatMidOptions = collectionOptions.filter((col) =>
-    col.toLowerCase().includes(catMidInput.toLowerCase())
-  ).slice(0, 20);
-
   const filteredProducts = products.filter((p) => {
     const title = p.title.toLowerCase();
     const matchKeyword = !filterKeyword || title.includes(filterKeyword.toLowerCase());
@@ -158,6 +151,13 @@ export default function ProductList() {
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+
+  const filteredCatBigOptions = collectionOptions.filter((col) =>
+    col.toLowerCase().includes(catBigInput.toLowerCase())
+  ).slice(0, 20);
+  const filteredCatMidOptions = collectionOptions.filter((col) =>
+    col.toLowerCase().includes(catMidInput.toLowerCase())
+  ).slice(0, 20);
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
@@ -188,77 +188,29 @@ export default function ProductList() {
     );
   };
 
-  const filteredCollections = collectionSearch.trim()
-    ? collectionOptions.filter((name) =>
-        name.toLowerCase().includes(collectionSearch.toLowerCase())
-      ).slice(0, 20)
-    : [];
-
   return (
     <div>
-      <h1>商品一覧</h1>
-
-      {fetcher.state === "submitting" && (
-        <p style={{ color: "#2563eb", fontWeight: "bold", marginTop: "8px" }}>
-          ⏳ リライト中...
-        </p>
-      )}
-      {fetcher.state === "idle" && fetcher.data?.status === "success" && (
-        <div className="message-success">
-          ✅ {fetcher.data.count} 件のリライトが完了しました！
-        </div>
-      )}
-
-      <div style={{ marginBottom: "12px" }}>
-        <strong>テンプレート選択：</strong>
-        <label style={{ marginLeft: "12px" }}>
-          <input
-            type="radio"
-            value="aliexpress"
-            checked={template === "aliexpress"}
-            onChange={() => setTemplate("aliexpress")}
-          />
-          aliexpress
-        </label>
-        <label style={{ marginLeft: "12px" }}>
-          <input
-            type="radio"
-            value="alibaba"
-            checked={template === "alibaba"}
-            onChange={() => setTemplate("alibaba")}
-          />
-          alibaba
-        </label>
-      </div>
-
-      {/* パンくず大カテ入力 */}
-      <div style={{ marginBottom: "12px", position: "relative" }} ref={catBigRef}>
-        <label><strong>パンくず大カテ（cat_big）</strong></label><br />
+      <div ref={catBigRef} style={{ position: "relative", marginBottom: "12px" }}>
+        <label>パンくず大カテ</label><br />
         <input
           type="text"
-          placeholder="コレクション名を入力..."
           value={catBigInput}
-          onChange={(e) => setCatBigInput(e.target.value)}
-          style={{ padding: "6px", width: "300px" }}
+          onChange={(e) => {
+            setCatBigInput(e.target.value);
+            setShowCatBigSuggestions(true);
+          }}
+          onFocus={() => setShowCatBigSuggestions(true)}
         />
-        {catBigInput && filteredCatBigOptions.length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: "4px", marginTop: "4px",
-            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
-            width: "300px", background: "#fff", position: "absolute", zIndex: 10
-          }}>
+        {showCatBigSuggestions && filteredCatBigOptions.length > 0 && (
+          <ul style={{ position: "absolute", background: "#fff", border: "1px solid #ccc", zIndex: 10 }}>
             {filteredCatBigOptions.map((option) => (
               <li
                 key={option}
-                onClick={() => {
+                onMouseDown={() => {
                   setCatBigInput(option);
-                  setTimeout(() => document.activeElement.blur(), 0); // 入力欄のフォーカス解除でリストが閉じる
+                  setShowCatBigSuggestions(false);
                 }}
-                style={{
-                  padding: "6px",
-                  cursor: "pointer",
-                  backgroundColor: catBigInput === option ? "#eee" : "transparent"
-                }}
+                style={{ padding: "6px", cursor: "pointer" }}
               >
                 {option}
               </li>
@@ -267,80 +219,31 @@ export default function ProductList() {
         )}
       </div>
 
-      {/* パンくず中カテ入力 */}
-      <div style={{ marginBottom: "12px", position: "relative" }} ref={catMidRef}>
-        <label><strong>パンくず中カテ（cat_mid）</strong></label><br />
+      <div ref={catMidRef} style={{ position: "relative", marginBottom: "12px" }}>
+        <label>パンくず中カテ</label><br />
         <input
           type="text"
-          placeholder="コレクション名を入力..."
           value={catMidInput}
-          onChange={(e) => setCatMidInput(e.target.value)}
-          style={{ padding: "6px", width: "300px" }}
+          onChange={(e) => {
+            setCatMidInput(e.target.value);
+            setShowCatMidSuggestions(true);
+          }}
+          onFocus={() => setShowCatMidSuggestions(true)}
         />
-        {catMidInput && filteredCatMidOptions.length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: "4px", marginTop: "4px",
-            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
-            width: "300px", background: "#fff", position: "absolute", zIndex: 10
-          }}>
+        {showCatMidSuggestions && filteredCatMidOptions.length > 0 && (
+          <ul style={{ position: "absolute", background: "#fff", border: "1px solid #ccc", zIndex: 10 }}>
             {filteredCatMidOptions.map((option) => (
               <li
                 key={option}
-                onClick={() => setCatMidInput(option)}
-                style={{
-                  padding: "6px",
-                  cursor: "pointer",
-                  backgroundColor: catMidInput === option ? "#eee" : "transparent"
+                onMouseDown={() => {
+                  setCatMidInput(option);
+                  setShowCatMidSuggestions(false);
                 }}
+                style={{ padding: "6px", cursor: "pointer" }}
               >
                 {option}
               </li>
             ))}
-          </ul>
-        )}
-      </div>
-
-      <div style={{ marginBottom: "12px" }}>
-        <input
-          type="text"
-          placeholder="キーワード検索（タイトル）"
-          value={filterKeyword}
-          onChange={(e) => setFilterKeyword(e.target.value)}
-          style={{ padding: "6px", width: "300px", marginRight: "12px" }}
-        />
-        <label style={{ fontSize: "14px" }}>
-          <input
-            type="checkbox"
-            checked={showOnlyEnglish}
-            onChange={(e) => setShowOnlyEnglish(e.target.checked)}
-            style={{ marginRight: "6px" }}
-          />
-          「英語」を含む商品名のみ
-        </label>
-      </div>
-
-      <div style={{ marginBottom: "12px" }}>
-        <input
-          type="text"
-          placeholder="コレクション名で検索"
-          value={collectionSearch}
-          onChange={(e) => setCollectionSearch(e.target.value)}
-          style={{ padding: "6px", width: "300px" }}
-        />
-        {filteredCollections.length > 0 && (
-          <ul style={{ listStyle: "none", margin: "6px 0", padding: 0, maxHeight: "120px", overflowY: "auto" }}>
-            {filteredCollections.map((col) => (
-              <li
-                key={col}
-                onClick={() => setSelectedCollection(col)}
-                style={{ cursor: "pointer", padding: "4px 8px", backgroundColor: selectedCollection === col ? "#eee" : "transparent" }}
-              >
-                {col}
-              </li>
-            ))}
-            {selectedCollection && (
-              <li style={{ color: "#888", cursor: "pointer", padding: "4px 8px" }} onClick={() => setSelectedCollection("")}>× 絞り込み解除</li>
-            )}
           </ul>
         )}
       </div>
@@ -362,60 +265,46 @@ export default function ProductList() {
       <table className="product-table">
         <thead>
           <tr>
-            <th className="checkbox-cell">✔</th>
-            <th className="img-cell">画像</th>
-            <th className="id-cell">商品ID</th>
-            <th className="title-cell">商品名</th>
+            <th>✔</th>
+            <th>画像</th>
+            <th>商品ID</th>
+            <th>商品名</th>
           </tr>
         </thead>
         <tbody>
           {paginatedProducts.map((product) => (
             <tr key={product.id}>
-              <td className="checkbox-cell">
+              <td>
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(product.id)}
                   onChange={() => toggleSelect(product.id)}
                 />
               </td>
-              <td className="img-cell">
+              <td>
                 {product.images.edges[0]?.node.url ? (
-                  <img
-                    src={product.images.edges[0].node.url}
-                    alt=""
-                    style={{ width: "50px", height: "50px", objectFit: "contain" }}
-                  />
+                  <img src={product.images.edges[0].node.url} style={{ width: "50px", height: "50px" }} />
                 ) : (
-                  <div style={{ width: "50px", height: "50px", backgroundColor: "#eee" }} />
+                  <div style={{ width: "50px", height: "50px", background: "#eee" }} />
                 )}
               </td>
-              <td className="id-cell">
-                <a
-                  href={`https://admin.shopify.com/store/${shop}/products/${product.id.replace("gid://shopify/Product/", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+              <td>
+                <a href={`https://admin.shopify.com/store/${shop}/products/${product.id.replace("gid://shopify/Product/", "")}`} target="_blank" rel="noopener noreferrer">
                   {product.id.replace("gid://shopify/Product/", "")}
                 </a>
               </td>
-              <td className="title-cell" title={product.title}>{product.title}</td>
+              <td>{product.title}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       <div style={{ marginTop: "16px" }}>
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-          disabled={currentPage === 1}
-        >
+        <button onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
           ← 前へ
         </button>
         <span style={{ margin: "0 12px" }}>{currentPage} / {totalPages}</span>
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
+        <button onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>
           次へ →
         </button>
       </div>
