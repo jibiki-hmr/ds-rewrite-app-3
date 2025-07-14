@@ -326,7 +326,7 @@ export default function ProductList() {
         <label><strong>パンくず大カテ（cat_big）</strong></label><br />
         <input
           type="text"
-          placeholder="大カテ用コレクション名入力"
+          placeholder="Enter category collection name"
           value={catBigInput.title}
           onChange={(e) => {
             setCatBigInput({ ...catBigInput, title: e.target.value });
