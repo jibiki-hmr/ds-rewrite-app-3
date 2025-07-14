@@ -114,6 +114,12 @@ export default function ProductList() {
   const catBigRef = useRef(null);
   const catMidRef = useRef(null);
 
+  const filteredCatBigOptions = collectionOptions
+  .filter((col) =>
+    col.title.toLowerCase().includes(catBigInput.title.toLowerCase())
+  )
+  .slice(0, 20);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (catBigRef.current && !catBigRef.current.contains(event.target)) {
@@ -290,31 +296,39 @@ export default function ProductList() {
           onFocus={() => setShowCatBigSuggestions(true)}
           style={{ padding: "6px", width: "300px" }}
         />
-        {showCatBigSuggestions && filteredCollections.length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: "4px", marginTop: "4px",
-            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
-            width: "300px", background: "#fff", position: "absolute", zIndex: 10
-          }}>
-            {filteredCollections.map((option) => (
-              <li
-                key={option.id}
-                onClick={() => {
-                  setCatBigInput(option);
-                  setShowCatBigSuggestions(false);
-                }}
-                style={{
-                  padding: "6px",
-                  cursor: "pointer",
-                  backgroundColor: catBigInput.title === option.title ? "#eee" : "transparent"
-                }}
-              >
-                {option.title}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+        {showCatBigSuggestions && filteredCatBigOptions.length > 0 && (
+            <ul style={{
+              listStyle: "none",
+              padding: "0",
+              marginTop: "4px",
+              border: "1px solid #ccc",
+              maxHeight: "120px",
+              overflowY: "auto",
+              backgroundColor: "#fff",
+              position: "absolute",
+              zIndex: 10,
+              width: "300px",
+            }}>
+              {filteredCatBigOptions.map((option) => (
+                <li
+                  key={option.id}
+                  onClick={() => {
+                    setCatBigInput(option);
+                    setShowCatBigSuggestions(false);
+                  }}
+                  style={{
+                    padding: "6px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid #eee",
+                    backgroundColor: catBigInput.id === option.id ? "#f0f0f0" : "white"
+                  }}
+                >
+                  {option.title}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
       {/* ✅ パンくず中カテ入力 */}
       <div style={{ marginBottom: "12px", position: "relative" }} ref={catMidRef}>
