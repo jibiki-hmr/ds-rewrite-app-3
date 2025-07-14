@@ -17,6 +17,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const cat_big = formData.get("cat_big") || "";
   const cat_mid = formData.get("cat_mid") || "";
   const product_type = formData.get("product_type")?.toString() || "";
+  const cat_mid_handle = formData.get("cat_mid_handle")?.toString() || "";
+  const newHandle = `ali-${cat_mid_handle}`;
   const ids: string[] = JSON.parse((idsJson as string) || "[]");
 
   let updatedCount = 0;
@@ -87,6 +89,7 @@ ${product.descriptionHtml}
         mutation {
           productUpdate(product: {
             id: "${id}",
+            handle: "${newHandle}",
             title: "${title}",
             productType: "${product_type}", 
             descriptionHtml: """${bodyHtml}""",

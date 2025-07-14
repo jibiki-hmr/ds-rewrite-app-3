@@ -81,11 +81,15 @@ export async function loader({ request }) {
     for (const product of products) {
       product.collections.edges.forEach((edge) => {
         if (edge.node?.title && edge.node?.id) {
-          collectionMap.set(edge.node.title, edge.node.id);
+          collectionMap.set(edge.node.title, {
+          id: edge.node.id,
+          title: edge.node.title,
+          handle: edge.node.handle,
+        });
         }
       });
     }
-    const collectionOptions = Array.from(collectionMap, ([title, id]) => ({ title, id }));
+    const collectionOptions = Array.from(collectionMap.values());
 
     return json({
       products,
@@ -188,6 +192,7 @@ export default function ProductList() {
         cat_big: catBigInput.id,
         cat_mid: catMidInput.id,
         product_type: productType,
+        cat_mid_handle: catMidInput.handle,
       },
       { method: "post", action: "/api/bulk-rewrite" }
     );
