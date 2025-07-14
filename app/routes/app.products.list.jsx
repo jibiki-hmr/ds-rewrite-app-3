@@ -214,6 +214,12 @@ export default function ProductList() {
         </div>
       )}
 
+    <div style={{
+      backgroundColor: "#fff",
+      padding: "16px", 
+      borderRadius: "8px",
+      border: "1px solid #ddd" 
+    }}>
     <h2>商品絞込み</h2>
       {/* ✅ キーワード検索＋英語フィルター */}
       <div style={{ marginBottom: "12px" }}>
@@ -269,6 +275,7 @@ export default function ProductList() {
             )}
           </ul>
         )}
+      </div>
       </div>
 
       <h2>リライト設定</h2>
