@@ -1,4 +1,3 @@
-
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
@@ -81,31 +80,32 @@ export async function loader({ request }) {
         }
       }
 
-      hasNextPage = result.pageInfo.hasNextPage;
-      endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
+      return allProducts;
+    };
+
+    const products = await fetchAllProducts();
+
+    const collectionMap = new Map();
+    for (const product of products) {
+      product.collections.edges.forEach((edge) => {
+        if (edge.node?.title && edge.node?.id) {
+          collectionMap.set(edge.node.title, edge.node.id);
+        }
+      });
     }
+    const collectionOptions = Array.from(collectionMap, ([title, id]) => ({ title, id }));
 
-    return allProducts;
-  };
-
-  const products = await fetchAllProducts();
-
-  const collectionSet = new Set();
-  for (const product of products) {
-    product.collections.edges.forEach((edge) => {
-      if (edge.node?.title) {
-        collectionSet.add(edge.node.title);
-      }
+    return json({
+      products,
+      shop: session.shop.replace(".myshopify.com", ""),
+      collectionOptions,
     });
-  }
-  const collectionOptions = Array.from(collectionSet);
-
-  return json({ products, shop: session.shop.replace(".myshopify.com", ""), collectionOptions });
 }
 
 export default function ProductList() {
   const { products, shop, collectionOptions } = useLoaderData();
   const fetcher = useFetcher();
+
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterKeyword, setFilterKeyword] = useState("");
@@ -114,8 +114,8 @@ export default function ProductList() {
   const [collectionSearch, setCollectionSearch] = useState("");
   const [template, setTemplate] = useState("aliexpress");
 
-  const [catBigInput, setCatBigInput] = useState("");
-  const [catMidInput, setCatMidInput] = useState("");
+  const [catBigInput, setCatBigInput] = useState({ id: "", title: "" });
+  const [catMidInput, setCatMidInput] = useState({ id: "", title: "" });
   const [showCatBigSuggestions, setShowCatBigSuggestions] = useState(false);
   const [showCatMidSuggestions, setShowCatMidSuggestions] = useState(false);
 
@@ -138,9 +138,10 @@ export default function ProductList() {
   }, []);
 
   const pageSize = 50;
+
   const filteredCollections = collectionSearch.trim()
-    ? collectionOptions.filter((name) =>
-        name.toLowerCase().includes(collectionSearch.toLowerCase())
+    ? collectionOptions.filter((col) =>
+        col.title.toLowerCase().includes(collectionSearch.toLowerCase())
       ).slice(0, 20)
     : [];
 
@@ -158,13 +159,6 @@ export default function ProductList() {
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
-
-  const filteredCatBigOptions = collectionOptions.filter((col) =>
-    col.toLowerCase().includes(catBigInput.toLowerCase())
-  ).slice(0, 20);
-  const filteredCatMidOptions = collectionOptions.filter((col) =>
-    col.toLowerCase().includes(catMidInput.toLowerCase())
-  ).slice(0, 20);
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
@@ -188,8 +182,8 @@ export default function ProductList() {
       {
         ids: JSON.stringify(selectedIds),
         template,
-        cat_big: catBigInput,
-        cat_mid: catMidInput,
+        cat_big: catBigInput.id,
+        cat_mid: catMidInput.id,
       },
       { method: "post", action: "/api/bulk-rewrite" }
     );
@@ -199,6 +193,7 @@ export default function ProductList() {
     <div>
       <h1>商品一覧</h1>
 
+      {/* ✅ リライト中・完了メッセージ */}
       {fetcher.state === "submitting" && (
         <p style={{ color: "#2563eb", fontWeight: "bold", marginTop: "8px" }}>
           ⏳ リライト中...
@@ -209,7 +204,8 @@ export default function ProductList() {
           ✅ {fetcher.data.count} 件のリライトが完了しました！
         </div>
       )}
-      
+
+      {/* ✅ テンプレート選択 */}
       <div style={{ marginBottom: "12px" }}>
         <strong>テンプレート選択：</strong>
         <label style={{ marginLeft: "12px" }}>
@@ -232,6 +228,7 @@ export default function ProductList() {
         </label>
       </div>
 
+      {/* ✅ キーワード検索＋英語フィルター */}
       <div style={{ marginBottom: "12px" }}>
         <input
           type="text"
@@ -251,6 +248,7 @@ export default function ProductList() {
         </label>
       </div>
 
+      {/* ✅ コレクション検索・選択 */}
       <div style={{ marginBottom: "12px" }}>
         <input
           type="text"
@@ -260,81 +258,113 @@ export default function ProductList() {
           style={{ padding: "6px", width: "300px" }}
         />
         {filteredCollections.length > 0 && (
-          <ul style={{ listStyle: "none", margin: "6px 0", padding: 0, maxHeight: "120px", overflowY: "auto" }}>
+          <ul style={{
+            listStyle: "none", margin: "6px 0", padding: 0,
+            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
+            width: "300px", background: "#fff"
+          }}>
             {filteredCollections.map((col) => (
               <li
-                key={col}
-                onClick={() => setSelectedCollection(col)}
-                style={{ cursor: "pointer", padding: "4px 8px", backgroundColor: selectedCollection === col ? "#eee" : "transparent" }}
+                key={col.id}
+                onClick={() => setSelectedCollection(col.title)}
+                style={{ cursor: "pointer", padding: "4px 8px", backgroundColor: selectedCollection === col.title ? "#eee" : "transparent" }}
               >
-                {col}
+                {col.title}
               </li>
             ))}
             {selectedCollection && (
-              <li style={{ color: "#888", cursor: "pointer", padding: "4px 8px" }} onClick={() => setSelectedCollection("")}>× 絞り込み解除</li>
+              <li
+                style={{ color: "#888", cursor: "pointer", padding: "4px 8px" }}
+                onClick={() => setSelectedCollection("")}
+              >
+                × 絞り込み解除
+              </li>
             )}
           </ul>
         )}
       </div>
 
-      <div ref={catBigRef} style={{ position: "relative", marginBottom: "12px" }}>
-        <label>パンくず大カテ</label><br />
+      {/* ✅ パンくず大カテ入力 */}
+      <div style={{ marginBottom: "12px", position: "relative" }} ref={catBigRef}>
+        <label><strong>パンくず大カテ（cat_big）</strong></label><br />
         <input
           type="text"
-          value={catBigInput}
+          placeholder="コレクション名を入力..."
+          value={catBigInput.title}
           onChange={(e) => {
-            setCatBigInput(e.target.value);
+            setCatBigInput({ ...catBigInput, title: e.target.value });
             setShowCatBigSuggestions(true);
           }}
           onFocus={() => setShowCatBigSuggestions(true)}
+          style={{ padding: "6px", width: "300px" }}
         />
-        {showCatBigSuggestions && filteredCatBigOptions.length > 0 && (
-          <ul style={{ position: "absolute", background: "#fff", border: "1px solid #ccc", zIndex: 10 }}>
-            {filteredCatBigOptions.map((option) => (
+        {showCatBigSuggestions && filteredCollections.length > 0 && (
+          <ul style={{
+            listStyle: "none", padding: "4px", marginTop: "4px",
+            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
+            width: "300px", background: "#fff", position: "absolute", zIndex: 10
+          }}>
+            {filteredCollections.map((option) => (
               <li
-                key={option}
-                onMouseDown={() => {
+                key={option.id}
+                onClick={() => {
                   setCatBigInput(option);
                   setShowCatBigSuggestions(false);
                 }}
-                style={{ padding: "6px", cursor: "pointer" }}
+                style={{
+                  padding: "6px",
+                  cursor: "pointer",
+                  backgroundColor: catBigInput.title === option.title ? "#eee" : "transparent"
+                }}
               >
-                {option}
+                {option.title}
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <div ref={catMidRef} style={{ position: "relative", marginBottom: "12px" }}>
-        <label>パンくず中カテ</label><br />
+      {/* ✅ パンくず中カテ入力 */}
+      <div style={{ marginBottom: "12px", position: "relative" }} ref={catMidRef}>
+        <label><strong>パンくず中カテ（cat_mid）</strong></label><br />
         <input
           type="text"
-          value={catMidInput}
+          placeholder="コレクション名を入力..."
+          value={catMidInput.title}
           onChange={(e) => {
-            setCatMidInput(e.target.value);
+            setCatMidInput({ ...catMidInput, title: e.target.value });
             setShowCatMidSuggestions(true);
           }}
           onFocus={() => setShowCatMidSuggestions(true)}
+          style={{ padding: "6px", width: "300px" }}
         />
-        {showCatMidSuggestions && filteredCatMidOptions.length > 0 && (
-          <ul style={{ position: "absolute", background: "#fff", border: "1px solid #ccc", zIndex: 10 }}>
-            {filteredCatMidOptions.map((option) => (
+        {showCatMidSuggestions && filteredCollections.length > 0 && (
+          <ul style={{
+            listStyle: "none", padding: "4px", marginTop: "4px",
+            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
+            width: "300px", background: "#fff", position: "absolute", zIndex: 10
+          }}>
+            {filteredCollections.map((option) => (
               <li
-                key={option}
-                onMouseDown={() => {
+                key={option.id}
+                onClick={() => {
                   setCatMidInput(option);
                   setShowCatMidSuggestions(false);
                 }}
-                style={{ padding: "6px", cursor: "pointer" }}
+                style={{
+                  padding: "6px",
+                  cursor: "pointer",
+                  backgroundColor: catMidInput.title === option.title ? "#eee" : "transparent"
+                }}
               >
-                {option}
+                {option.title}
               </li>
             ))}
           </ul>
         )}
       </div>
 
+      {/* ✅ 一括処理と選択カウント */}
       <div style={{ marginBottom: "12px" }}>
         <button onClick={handleBulkRewrite} disabled={selectedIds.length === 0 || fetcher.state !== "idle"}>
           一括リライト＆保存
@@ -349,6 +379,7 @@ export default function ProductList() {
         </span>
       </div>
 
+      {/* ✅ 商品テーブル */}
       <table className="product-table">
         <thead>
           <tr>
@@ -376,7 +407,11 @@ export default function ProductList() {
                 )}
               </td>
               <td>
-                <a href={`https://admin.shopify.com/store/${shop}/products/${product.id.replace("gid://shopify/Product/", "")}`} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={`https://admin.shopify.com/store/${shop}/products/${product.id.replace("gid://shopify/Product/", "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {product.id.replace("gid://shopify/Product/", "")}
                 </a>
               </td>
@@ -386,12 +421,19 @@ export default function ProductList() {
         </tbody>
       </table>
 
+      {/* ✅ ページネーション */}
       <div style={{ marginTop: "16px" }}>
-        <button onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+        <button
+          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+          disabled={currentPage === 1}
+        >
           ← 前へ
         </button>
         <span style={{ margin: "0 12px" }}>{currentPage} / {totalPages}</span>
-        <button onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>
+        <button
+          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
           次へ →
         </button>
       </div>
