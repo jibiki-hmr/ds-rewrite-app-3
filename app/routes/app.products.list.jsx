@@ -1,3 +1,4 @@
+
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
@@ -7,100 +8,7 @@ export function links() {
   return [{ rel: "stylesheet", href: productListStylesHref }];
 }
 
-export async function loader({ request }) {
-  const { authenticate } = await import("../shopify.server");
-  const { session } = await authenticate.admin(request);
-
-  const fetchAllProducts = async () => {
-    let hasNextPage = true;
-    let endCursor = null;
-    const allProducts = [];
-
-    while (hasNextPage) {
-      const query = `
-        {
-          products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
-            pageInfo {
-              hasNextPage
-            }
-            edges {
-              cursor
-              node {
-                id
-                title
-                collections(first: 5) {
-                  edges {
-                    node {
-                      id
-                      title
-                    }
-                  }
-                }
-                images(first: 1) {
-                  edges {
-                    node {
-                      url
-                    }
-                  }
-                }
-                variants(first: 1) {
-                  edges {
-                    node {
-                      fulfillmentService {
-                        handle
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      const response = await fetch(`https://${session.shop}/admin/api/2024-01/graphql.json`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": session.accessToken,
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      const jsonRes = await response.json();
-      const result = jsonRes?.data?.products;
-      if (!result) throw new Error("商品データの取得に失敗しました。");
-
-      for (const edge of result.edges) {
-        const product = edge.node;
-        const variant = product.variants.edges[0]?.node;
-        const handle = variant?.fulfillmentService?.handle;
-        if (handle === "dsers-fulfillment-service") {
-          allProducts.push(product);
-        }
-      }
-
-      hasNextPage = result.pageInfo.hasNextPage;
-      endCursor = result.edges.length > 0 ? result.edges[result.edges.length - 1].cursor : null;
-    }
-
-    return allProducts;
-  };
-
-  const products = await fetchAllProducts();
-
-  const collectionSet = new Set();
-  for (const product of products) {
-    product.collections.edges.forEach((edge) => {
-      if (edge.node?.title) {
-        collectionSet.add(edge.node.title);
-      }
-    });
-  }
-  const collectionOptions = Array.from(collectionSet);
-
-  return json({ products, shop: session.shop.replace(".myshopify.com", ""), collectionOptions });
-}
+// ... loader関数省略（前と同じ）
 
 export default function ProductList() {
   const { products, shop, collectionOptions } = useLoaderData();
@@ -115,6 +23,8 @@ export default function ProductList() {
 
   const [catBigInput, setCatBigInput] = useState("");
   const [catMidInput, setCatMidInput] = useState("");
+  const [showCatBigSuggestions, setShowCatBigSuggestions] = useState(false);
+  const [showCatMidSuggestions, setShowCatMidSuggestions] = useState(false);
 
   const catBigRef = useRef(null);
   const catMidRef = useRef(null);
@@ -122,143 +32,49 @@ export default function ProductList() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (catBigRef.current && !catBigRef.current.contains(event.target)) {
-        setCatBigInput((prev) => prev); // 入力保持、候補だけ閉じたい場合は別stateを管理
+        setShowCatBigSuggestions(false);
       }
       if (catMidRef.current && !catMidRef.current.contains(event.target)) {
-        setCatMidInput((prev) => prev);
+        setShowCatMidSuggestions(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const pageSize = 50;
 
   const filteredCatBigOptions = collectionOptions.filter((col) =>
     col.toLowerCase().includes(catBigInput.toLowerCase())
   ).slice(0, 20);
+
   const filteredCatMidOptions = collectionOptions.filter((col) =>
     col.toLowerCase().includes(catMidInput.toLowerCase())
   ).slice(0, 20);
 
-  const filteredProducts = products.filter((p) => {
-    const title = p.title.toLowerCase();
-    const matchKeyword = !filterKeyword || title.includes(filterKeyword.toLowerCase());
-    const matchEnglish = !showOnlyEnglish || /[a-zA-Z]/.test(p.title);
-    const collectionTitles = p.collections.edges.map((e) => e.node?.title);
-    const matchCollection = !selectedCollection || collectionTitles.includes(selectedCollection);
-    return matchKeyword && matchEnglish && matchCollection;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAllOnPage = () => {
-    const allIdsOnPage = paginatedProducts.map((p) => p.id);
-    const allSelected = allIdsOnPage.every((id) => selectedIds.includes(id));
-    if (allSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !allIdsOnPage.includes(id)));
-    } else {
-      setSelectedIds((prev) => Array.from(new Set([...prev, ...allIdsOnPage])));
-    }
-  };
-
-  const handleBulkRewrite = () => {
-    if (selectedIds.length === 0) return;
-    fetcher.submit(
-      {
-        ids: JSON.stringify(selectedIds),
-        template,
-        cat_big: catBigInput,
-        cat_mid: catMidInput,
-      },
-      { method: "post", action: "/api/bulk-rewrite" }
-    );
-  };
-
-  const filteredCollections = collectionSearch.trim()
-    ? collectionOptions.filter((name) =>
-        name.toLowerCase().includes(collectionSearch.toLowerCase())
-      ).slice(0, 20)
-    : [];
-
   return (
-    <div>
-      <h1>商品一覧</h1>
-
-      {fetcher.state === "submitting" && (
-        <p style={{ color: "#2563eb", fontWeight: "bold", marginTop: "8px" }}>
-          ⏳ リライト中...
-        </p>
-      )}
-      {fetcher.state === "idle" && fetcher.data?.status === "success" && (
-        <div className="message-success">
-          ✅ {fetcher.data.count} 件のリライトが完了しました！
-        </div>
-      )}
-
-      <div style={{ marginBottom: "12px" }}>
-        <strong>テンプレート選択：</strong>
-        <label style={{ marginLeft: "12px" }}>
-          <input
-            type="radio"
-            value="aliexpress"
-            checked={template === "aliexpress"}
-            onChange={() => setTemplate("aliexpress")}
-          />
-          aliexpress
-        </label>
-        <label style={{ marginLeft: "12px" }}>
-          <input
-            type="radio"
-            value="alibaba"
-            checked={template === "alibaba"}
-            onChange={() => setTemplate("alibaba")}
-          />
-          alibaba
-        </label>
-      </div>
-
-      {/* パンくず大カテ入力 */}
-      <div style={{ marginBottom: "12px", position: "relative" }} ref={catBigRef}>
-        <label><strong>パンくず大カテ（cat_big）</strong></label><br />
+    <>
+      {/* cat_big */}
+      <div ref={catBigRef} style={{ position: "relative", marginBottom: "12px" }}>
+        <label>パンくず大カテ</label><br />
         <input
           type="text"
-          placeholder="コレクション名を入力..."
           value={catBigInput}
-          onChange={(e) => setCatBigInput(e.target.value)}
-          style={{ padding: "6px", width: "300px" }}
+          onChange={(e) => {
+            setCatBigInput(e.target.value);
+            setShowCatBigSuggestions(true);
+          }}
+          onFocus={() => setShowCatBigSuggestions(true)}
         />
-        {catBigInput && filteredCatBigOptions.length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: "4px", marginTop: "4px",
-            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
-            width: "300px", background: "#fff", position: "absolute", zIndex: 10
-          }}>
+        {showCatBigSuggestions && filteredCatBigOptions.length > 0 && (
+          <ul style={{ position: "absolute", background: "#fff", zIndex: 1000 }}>
             {filteredCatBigOptions.map((option) => (
               <li
                 key={option}
                 onClick={() => {
                   setCatBigInput(option);
-                  setTimeout(() => document.activeElement.blur(), 0); // 入力欄のフォーカス解除でリストが閉じる
+                  setShowCatBigSuggestions(false);
                 }}
-                style={{
-                  padding: "6px",
-                  cursor: "pointer",
-                  backgroundColor: catBigInput === option ? "#eee" : "transparent"
-                }}
+                style={{ cursor: "pointer", padding: "4px" }}
               >
                 {option}
               </li>
@@ -267,31 +83,28 @@ export default function ProductList() {
         )}
       </div>
 
-      {/* パンくず中カテ入力 */}
-      <div style={{ marginBottom: "12px", position: "relative" }} ref={catMidRef}>
-        <label><strong>パンくず中カテ（cat_mid）</strong></label><br />
+      {/* cat_mid */}
+      <div ref={catMidRef} style={{ position: "relative", marginBottom: "12px" }}>
+        <label>パンくず中カテ</label><br />
         <input
           type="text"
-          placeholder="コレクション名を入力..."
           value={catMidInput}
-          onChange={(e) => setCatMidInput(e.target.value)}
-          style={{ padding: "6px", width: "300px" }}
+          onChange={(e) => {
+            setCatMidInput(e.target.value);
+            setShowCatMidSuggestions(true);
+          }}
+          onFocus={() => setShowCatMidSuggestions(true)}
         />
-        {catMidInput && filteredCatMidOptions.length > 0 && (
-          <ul style={{
-            listStyle: "none", padding: "4px", marginTop: "4px",
-            maxHeight: "120px", overflowY: "auto", border: "1px solid #ccc",
-            width: "300px", background: "#fff", position: "absolute", zIndex: 10
-          }}>
+        {showCatMidSuggestions && filteredCatMidOptions.length > 0 && (
+          <ul style={{ position: "absolute", background: "#fff", zIndex: 1000 }}>
             {filteredCatMidOptions.map((option) => (
               <li
                 key={option}
-                onClick={() => setCatMidInput(option)}
-                style={{
-                  padding: "6px",
-                  cursor: "pointer",
-                  backgroundColor: catMidInput === option ? "#eee" : "transparent"
+                onClick={() => {
+                  setCatMidInput(option);
+                  setShowCatMidSuggestions(false);
                 }}
+                style={{ cursor: "pointer", padding: "4px" }}
               >
                 {option}
               </li>
