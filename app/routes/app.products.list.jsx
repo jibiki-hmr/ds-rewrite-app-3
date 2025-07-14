@@ -419,6 +419,13 @@ export default function ProductList() {
     </div>
     </div>
 
+      <div style={{
+        backgroundColor: "#fff",
+        padding: "16px", 
+        margin: "10px",
+        borderRadius: "8px",
+        border: "1px solid #ddd" 
+      }}>
       {/* ✅ 一括処理と選択カウント */}
       <div style={{ marginBottom: "12px" }}>
         <button onClick={handleBulkRewrite} disabled={selectedIds.length === 0 || fetcher.state !== "idle"}>
@@ -432,6 +439,7 @@ export default function ProductList() {
         <span style={{ marginLeft: "12px", color: "#555" }}>
           選択中: {selectedIds.length} 件
         </span>
+      </div>
       </div>
 
       {/* ✅ 商品テーブル */}
