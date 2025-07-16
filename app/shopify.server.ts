@@ -26,7 +26,7 @@ const shopify = shopifyApp({
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new memoryStorageClass(), // ✅ クラスインスタンスで初期化
-  distribution: AppDistribution.AppStore,
+  distribution: AppDistribution.Custom,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
     removeRest: true,
