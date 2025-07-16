@@ -1,6 +1,6 @@
-client_id = "a49b088e864543360fe069daa265c3d5"
-name = "Ali商品リライト誉"
-handle = "ali-33"
+client_id = "234d826d8013a2e629f3635caa55717e"
+name = "Ali商品リライト誉 v2"
+handle = "ali-v2"
 application_url = "https://ds-rewrite-app-3.vercel.app"
 embedded = true
 
